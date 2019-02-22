@@ -125,8 +125,15 @@ void testWordFreq(const char * file1, const char * file2)
     cout << "文本相似性:" << getSimilarityRatio(wfCoding1, wfCoding2) << endl;
 }
 
+void test()
+{
+    TextSimilarity ts;
+    ts.test(IDF_PATH);
+}
+
 int main(int argc, char** argv)
 {
+#if 1
     if(argc != 3)
     {
         cout << "user page: programname filename1 filename2" << endl;
@@ -134,5 +141,6 @@ int main(int argc, char** argv)
     }
 
 	testWordFreq(argv[1], argv[2]);
+#endif
 	return 0;
  }

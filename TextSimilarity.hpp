@@ -7,6 +7,7 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <sstream>
 #include "cppjieba/Jieba.hpp"
 
 const char* const DICT_PATH = "./dict/jieba.dict.utf8";
@@ -20,6 +21,7 @@ class TextSimilarity
 {
 public:
 	typedef std::unordered_map<std::string, int> wordFreq;
+    typedef wordFreq idfTableMap;
 	typedef std::unordered_set<std::string> StringSet;
     typedef StringSet stopWordSet;
     typedef std::vector<std::pair<std::string, int>> wfVec;
@@ -42,6 +44,7 @@ public:
 		STOP_WORD_PATH)
 	{
 		getStopWordTable(STOP_WORD_PATH);
+        getIdfTable(IDF_PATH);
 	}
 
 	wordFreq getWordFreq(const char *filename)
@@ -87,15 +90,22 @@ public:
 		return wf_;
 	}
 
-    void sortByFreq(const wordFreq& wf, wfVec& wfvec)
+    void sortByFreq(wordFreq& wf, wfVec& wfvec)
     {
         for(const auto& e : wf)
         {
-            wfvec.push_back(e);
+            std::pair<std::string, int> word_TfIdf_pair = e;
+            word_TfIdf_pair.second = wf[e.first]*idfTable_[e.first];
+
+            wfvec.push_back(word_TfIdf_pair);
         }
         sort(wfvec.begin(), wfvec.end(), cmp());
     }
 
+    void test(const char * str)
+    {
+        getIdfTable(str);
+    }
     
 private:
 	void getStopWordTable(const char * stopWordFileName)
@@ -116,8 +126,42 @@ private:
 		fin.close();
 	}
 
+    void getIdfTable(const char * idfFileName)
+    {
+        std::ifstream fin(idfFileName);
+        if(!fin.is_open())
+        {
+			std::cout << "open file: " << idfFileName<< " failed!\n";
+			return;
+        }
+
+        std::string line;
+        while(!fin.eof())
+        {
+            getline(fin, line);
+            if(line.size() <= 1)break;
+            std::pair<std::string, double> word_idf_pair;
+            int space_index = 0;
+            while(line[space_index] != ' ')
+            {
+                ++space_index;
+            }
+
+            word_idf_pair.first = line.substr(0, space_index);
+            std::string idf_string = line.substr(space_index + 1);
+
+            std::istringstream is(idf_string);            
+            is >> word_idf_pair.second;
+
+            idfTable_.insert(word_idf_pair);
+        }
+
+        fin.close();
+    }
+
 	cppjieba::Jieba jieba_;
 	stopWordSet stopWords_;
+    idfTableMap idfTable_;
 };
 
 
